@@ -103,10 +103,16 @@ Transaction options:
           This is automatically enabled for common networks without EIP1559.
 
       --blob
-          Send a EIP-4844 blob transaction
+          Send a blob transaction using EIP-7594 (PeerDAS) format.
+          
+          Note: Use with `--eip4844` for the legacy EIP-4844 format.
+
+      --eip4844
+          Send a blob transaction using EIP-4844 (legacy) format instead of
+          EIP-7594. Must be used with `--blob`
 
       --blob-gas-price <BLOB_PRICE>
-          Gas price for EIP-4844 blob transaction
+          Gas price for EIP-7594/EIP-4844 blob transaction
           
           [env: ETH_BLOB_GAS_PRICE=]
 
@@ -122,17 +128,111 @@ Transaction options:
           the access list via an RPC call to `eth_createAccessList`. To retrieve
           only the access list portion, use the `cast access-list` command.
 
-Ethereum options:
-  -r, --rpc-url <URL>
-          The RPC endpoint, default value is http://localhost:8545
+Tempo:
+      --tempo.fee-token <FEE_TOKEN>
+          Fee token address for Tempo transactions.
+          
+          When set, builds a Tempo (type 0x76) transaction that pays gas fees in
+          the specified token.
+          
+          If this is not set, the fee token is chosen according to network
+          rules. See the Tempo docs for more information.
+
+      --tempo.nonce-key <NONCE_KEY>
+          Nonce key for Tempo parallelizable nonces.
+          
+          When set, builds a Tempo (type 0x76) transaction with the specified
+          nonce key, allowing multiple transactions with the same nonce but
+          different keys to be executed in parallel. If not set, the protocol
+          nonce key (0) will be used.
+          
+          For more information see
+          [https://docs.tempo.xyz/protocol/transactions/spec-tempo-transaction#parallelizable-nonces](https://docs.tempo.xyz/protocol/transactions/spec-tempo-transaction#parallelizable-nonces).
+
+      --tempo.sponsor-signature <SPONSOR_SIGNATURE>
+          Sponsor (fee payer) signature for Tempo sponsored transactions.
+          
+          The sponsor signs the `fee_payer_signature_hash` to commit to paying
+          gas fees on behalf of the sender. Provide as a hex-encoded signature.
+
+      --tempo.print-sponsor-hash
+          Print the sponsor signature hash and exit.
+          
+          Computes the `fee_payer_signature_hash` for the transaction so that a
+          sponsor knows what hash to sign. The transaction is not sent.
+
+      --tempo.key-id <KEY_ID>
+          Access key ID for Tempo Keychain signature transactions.
+          
+          Used during gas estimation to override the key_id that would normally
+          be recovered from the signature.
+
+      --tempo.expiring-nonce
+          Enable expiring nonce mode for Tempo transactions.
+          
+          Sets nonce to 0 and nonce_key to U256::MAX, enabling time-bounded
+          transaction validity via `--tempo.valid-before` and
+          `--tempo.valid-after`.
+
+      --tempo.valid-before <VALID_BEFORE>
+          Upper bound timestamp for Tempo expiring nonce transactions.
+          
+          The transaction is only valid before this unix timestamp. Requires
+          `--tempo.expiring-nonce`.
+
+      --tempo.valid-after <VALID_AFTER>
+          Lower bound timestamp for Tempo expiring nonce transactions.
+          
+          The transaction is only valid after this unix timestamp. Requires
+          `--tempo.expiring-nonce`.
+
+Rpc options:
+  -r, --rpc-url <RPC_URL>
+          The RPC endpoint
           
           [env: ETH_RPC_URL=]
+          [aliases: --fork-url]
 
   -k, --insecure
           Allow insecure RPC connections (accept invalid HTTPS certificates).
           
           When the provider's inner runtime transport variant is HTTP, this
           configures the reqwest client to accept invalid certificates.
+
+      --rpc-timeout <RPC_TIMEOUT>
+          Timeout for the RPC request in seconds.
+          
+          The specified timeout will be used to override the default timeout for
+          RPC requests.
+          
+          Default value: 45
+          
+          [env: ETH_RPC_TIMEOUT=]
+
+      --no-proxy
+          Disable automatic proxy detection.
+          
+          Use this in sandboxed environments (e.g., Cursor IDE sandbox, macOS
+          App Sandbox) where system proxy detection causes crashes. When
+          enabled, HTTP_PROXY/HTTPS_PROXY environment variables and system proxy
+          settings will be ignored.
+
+      --compute-units-per-second <CUPS>
+          Sets the number of assumed available compute units per second for this
+          provider.
+          
+          default value: 330
+          
+          See also
+          [https://docs.alchemy.com/reference/compute-units#what-are-cups-compute-units-per-second](https://docs.alchemy.com/reference/compute-units#what-are-cups-compute-units-per-second)
+
+      --no-rpc-rate-limit
+          Disables rate limiting for this node's provider.
+          
+          See also
+          [https://docs.alchemy.com/reference/compute-units#what-are-cups-compute-units-per-second](https://docs.alchemy.com/reference/compute-units#what-are-cups-compute-units-per-second)
+          
+          [aliases: --no-rate-limit]
 
       --flashbots
           Use the Flashbots RPC URL with fast mode
@@ -157,30 +257,13 @@ Ethereum options:
           
           [env: ETH_RPC_JWT_SECRET=]
 
-      --rpc-timeout <RPC_TIMEOUT>
-          Timeout for the RPC request in seconds.
-          
-          The specified timeout will be used to override the default timeout for
-          RPC requests.
-          
-          Default value: 45
-          
-          [env: ETH_RPC_TIMEOUT=]
-
       --rpc-headers <RPC_HEADERS>
           Specify custom headers for RPC requests
           
           [env: ETH_RPC_HEADERS=]
 
-  -e, --etherscan-api-key <KEY>
-          The Etherscan (or equivalent) API key
-          
-          [env: ETHERSCAN_API_KEY=]
-
-  -c, --chain <CHAIN>
-          The chain name or EIP-155 chain ID
-          
-          [env: CHAIN=]
+      --curl
+          Print the equivalent curl command instead of making the RPC request
 
 Wallet options - raw:
   -f, --from <ADDRESS>
@@ -211,6 +294,9 @@ Wallet options - raw:
           Used with --mnemonic-path.
           
           [default: 0]
+
+  -c, --chain <CHAIN>
+          [env: CHAIN=]
 
       --with-local-artifacts
           Use current project artifacts for trace decoding
@@ -285,6 +371,31 @@ Wallet options - remote:
           GCP_LOCATION, GCP_KEY_RING, GCP_KEY_NAME, GCP_KEY_VERSION.
           
           See: [https://cloud.google.com/kms/docs](https://cloud.google.com/kms/docs)
+
+      --turnkey
+          Use Turnkey.
+          
+          Ensure the following environment variables are set:
+          TURNKEY_API_PRIVATE_KEY, TURNKEY_ORGANIZATION_ID, TURNKEY_ADDRESS.
+          
+          See: [https://docs.turnkey.com/getting-started/quickstart](https://docs.turnkey.com/getting-started/quickstart)
+
+Wallet options - Tempo:
+      --tempo.access-key <PRIVATE_KEY>
+          Tempo access key private key.
+          
+          When set, the transaction is signed with this access key on behalf of
+          `--tempo.root-account`.
+          
+          [env: TEMPO_ACCESS_KEY=]
+
+      --tempo.root-account <ADDRESS>
+          Tempo root account address (the `from` address for keychain
+          transactions).
+          
+          Required when `--tempo.access-key` is set.
+          
+          [env: TEMPO_ROOT_ACCOUNT=]
 
 Display options:
       --color <COLOR>

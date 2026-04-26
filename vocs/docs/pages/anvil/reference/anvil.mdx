@@ -80,8 +80,11 @@ Options:
           
           Note that `prune_history` will overwrite `max_persisted_states` to 0.
 
+      --max-transactions <MAX_TRANSACTIONS>
+          Maximum number of transactions in a block
+
       --mixed-mining
-          [aliases: --mixed-mining]
+          
 
       --mnemonic-random [<MNEMONIC_RANDOM>]
           Automatically generates a BIP39 mnemonic phrase, and derives accounts
@@ -197,7 +200,12 @@ Server options:
           [default: *]
 
       --cache-path <PATH>
-          Path to the cache directory where states are stored
+          Path to the cache directory where persisted states are stored (see
+          `--max-persisted-states`).
+          
+          Note: This does not affect the fork RPC cache location
+          (`storage.json`), which is stored in
+          `~/.foundry/cache/rpc/<chain>/<block>/`.
 
       --host <IP_ADDR>
           The hosts the server will listen on
@@ -229,6 +237,10 @@ Fork config:
           If you want to fetch state from a specific block number, add a block
           number like `http://localhost:8545@1400000` or use the
           `--fork-block-number` argument.
+          
+          Multiple `--fork-url` flags can be provided to distribute requests
+          across endpoints using round-robin load balancing. On failure, the
+          retry layer rotates to the next endpoint.
           
           [aliases: --rpc-url]
 
@@ -319,6 +331,12 @@ Environment config:
           
           [aliases: --no-priority-fee]
 
+      --enable-tx-gas-limit
+          Enable the transaction gas limit check as imposed by EIP-7825 (Osaka
+          hardfork)
+          
+          [aliases: --tx-gas-limit]
+
       --gas-limit <GAS_LIMIT>
           The block gas limit
 
@@ -364,8 +382,8 @@ Networks:
       --celo
           Enable Celo network features
 
-      --optimism
-          Enable Optimism network features
+  -n, --network <NETWORK>
+          Enable a specific network family
           
-          [aliases: --optimism]
+          [possible values: ethereum, optimism, tempo]
 ```

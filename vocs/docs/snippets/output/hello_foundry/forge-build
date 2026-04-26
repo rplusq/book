@@ -3,8 +3,8 @@
 $ forge build
 // [!endregion command]
 // [!region output]
-Compiling 23 files with Solc 0.8.30
-Solc 0.8.30 finished in 539.41ms
+Compiling 23 files with Solc 0.8.34
+Solc 0.8.34 finished in 449.42ms
 Compiler run successful!
 // [!endregion output]
 // [!endregion all]
